@@ -1,0 +1,77 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  labels:
+    app: redis-web
+    role: cache
+spec:
+  ports:
+    - port: 6379
+  selector:
+    app: redis-web
+  clusterIP: None
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  labels:
+    app: redis-web
+spec:
+  selector:
+    matchLabels:
+      app: redis-web
+  template:
+    metadata:
+      labels:
+        app: redis-web
+    spec:
+      containers:
+        - name: redis
+          image: redis
+          ports:
+            - containerPort: 6379
+              name: redis
+          resources:
+            limits:
+              memory: 128M
+              cpu: 250m
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-web
+  labels:
+    app: redis-web
+spec:
+  selector:
+    app: redis-web
+  ports:
+  - port: 8000
+    targetPort: 8000
+  type: LoadBalancer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-web
+spec:
+  selector:
+    matchLabels:
+      app: redis-web
+  template:
+    metadata:
+      labels:
+        app: redis-web
+    spec:
+      containers:
+      - name: redis-web
+        image: tehbilly/redis-web # Using this as I didn't feel like going through the effort of making it work with local images
+        resources:
+          limits:
+            memory: 128M
+            cpu: 250m
+        ports:
+        - containerPort: 8000
+          name: redis-web
